@@ -1,20 +1,32 @@
-﻿// Pantalla principal. Solo se llega aquí con sesión activa (lo garantiza ProtectedRoute en App.tsx). Reúne todo lo que pide el enunciado: nombre, saldo, recarga con SnailPay, las dos gráficas y el cierre de sesión.
-
+﻿// Pantalla principal del dashboard, que muestra el saldo, el formulario de recarga, los gráficos y el historial de operaciones. Maneja la sesión y el logout.
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { BalanceCard } from "../components/BalanceCard";
 import { BetsDonutChart } from "../components/BetsDonutChart";
+import { PaymentsList } from "../components/PaymentsList";
 import { RaceWinsBarChart } from "../components/RaceWinsBarChart";
 import { TopUpForm } from "../components/TopUpForm";
 import { useAuth } from "../context/useAuth";
 import { useBalance } from "../hooks/useBalance";
+import { getPayments, savePayment } from "../services/paymentsService";
+import type { SnailPayResponse } from "../services/snailPayService";
 
 export default function DashboardPage() {
   const { session, logout } = useAuth();
   const navigate = useNavigate();
-  const { balance, credit } = useBalance(session?.userId ?? "");
+  const userId = session?.userId ?? "";
+  const { balance, credit } = useBalance(userId);
+  const [payments, setPayments] = useState(() => getPayments(userId));
 
-  // Cerramos sesión y mandamos al login. Con `replace` el botón "atrás", no devuelve al dashboard.
+  // Cada respuesta de SnailPay se guarda en el historial. El saldo sube solo si la operación fue aprobada; en cualquier otro caso no se toca.
+  function handleResult(result: SnailPayResponse) {
+    setPayments(savePayment(userId, result));
+    if (result.status === "approved" && result.transaction_amount !== null) {
+      credit(result.transaction_amount);
+    }
+  }
 
+  // Cerramos sesión y mandamos al login. Con `replace` el botón "atrás" no devuelve al dashboard.
   function handleLogout() {
     logout();
     navigate("/login", { replace: true });
@@ -29,9 +41,10 @@ export default function DashboardPage() {
 
       <div className="grid">
         <BalanceCard balance={balance} />
-        <TopUpForm onApproved={credit} />
+        <TopUpForm userId={userId} email={session?.email ?? ""} onResult={handleResult} />
         <BetsDonutChart />
         <RaceWinsBarChart />
+        <PaymentsList payments={payments} />
       </div>
     </main>
   );

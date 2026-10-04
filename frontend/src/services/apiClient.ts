@@ -1,20 +1,13 @@
-// Único punto por donde el frontend habla con el backend.
-// Su trabajo es traducir cada tipo de respuesta a un ApiError con un `kind`, para que la pantalla pueda mostrar un mensaje distinto según lo que pasó (pago rechazado, servicio caído, timeout, sin conexión, etc.).
+// Unico punto donde el forntend se comunica con el backend. Este cliente de API se encarga de hacer las peticiones y manejar los errores de red, timeout y de la API. Nunca lanza un error por un rechazo de la API, solo por problemas de red o timeout.
 
-export type ApiErrorKind =
-  | "validation"
-  | "payment_declined"
-  | "unavailable"
-  | "timeout"
-  | "network"
-  | "server";
+export type ApiErrorkind = "validation" | "timeout" | "network" | "server";
 
 export class ApiError extends Error {
-  kind: ApiErrorKind;
+  kind: ApiErrorkind;
   status?: number;
   details?: unknown;
 
-  constructor(kind: ApiErrorKind, message: string, status?: number, details?: unknown) {
+  constructor(kind: ApiErrorkind, message: string, status?: number, details?: unknown) {
     super(message);
     this.name = "ApiError";
     this.kind = kind;
@@ -23,23 +16,20 @@ export class ApiError extends Error {
   }
 }
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001/api";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3001/api";
 
-// Decide qué tipo de error es, mirando primero el código que manda el backend y, si no hay uno conocido, el status HTTP.
-function kindFrom(status: number, code?: string): ApiErrorKind {
-  if (code === "PAYMENT_DECLINED") return "payment_declined";
-  if (code === "SNAILPAY_UNAVAILABLE") return "unavailable";
-  if (code === "GATEWAY_TIMEOUT") return "timeout";
-  if (status === 400) return "validation";
-  return "server";
+export interface RawResponse {
+  status: number;
+  ok: boolean;
+  body: unknown;
 }
 
-// Hace la petición y devuelve el JSON. Si el servidor tarda más de 5 s, la cortamos nosotros, para que la persona no se quede esperando.
-export async function request<T>(
+//Hace la peticiíon y devuelve el status y el body. Nunca lanza un error por un rechazo de la API, solo por problemas de red o timeout.
+export async function requestRaw(
   path: string,
   options: RequestInit = {},
   timeoutMs = 5000
-): Promise<T> {
+): Promise<RawResponse> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -51,28 +41,29 @@ export async function request<T>(
       headers: { "Content-Type": "application/json", ...options.headers },
     });
   } catch (err) {
-    // Se acabó el tiempo. No sabemos si el pago se procesó, así que avisamos que el saldo no se tocó.
     if (err instanceof DOMException && err.name === "AbortError") {
-      throw new ApiError(
-        "timeout",
-        "No pudimos confirmar el resultado a tiempo. Tu saldo no se modificó; inténtalo de nuevo."
-      );
+      throw new ApiError("timeout", "No pudimos confirmar la respuesta del servidor, intenta de nuevo más tarde");
     }
-    // Ni siquiera llegó al servidor (apagado, sin internet, etc.).
-    throw new ApiError("network", "No se pudo conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.");
-  } finally {
+    throw new ApiError("network", "No pudimos comunicarnos con el servidor, intenta de nuevo más tarde");
+  }finally{
     clearTimeout(timer);
   }
 
   const body = await response.json().catch(() => null);
-  if (!response.ok) {
-    const err = body?.error;
+  return { status: response.status, ok: response.ok, body };
+}
+
+// Endpoint de la API que devuelve un JSON con el status y el body. Lanza un ApiError si la respuesta es un rechazo (status >= 400). Nunca lanza un error por problemas de red o timeout, esos se manejan en requestRaw.
+export async function request<T>(path: string, options: RequestInit = {}, timeoutMs = 5000): Promise<T> {
+  const res = await requestRaw(path, options, timeoutMs);
+  if (!res.ok) {
+    const err = (res.body as { error?: { message?: string; details?: unknown } } | null)?.error;
     throw new ApiError(
-      kindFrom(response.status, err?.code),
+      res.status === 400 ? "validation" : "server",
       err?.message ?? "Ocurrió un error inesperado en el servidor.",
-      response.status,
+      res.status,
       err?.details
     );
   }
-  return body as T;
+  return res.body as T;
 }

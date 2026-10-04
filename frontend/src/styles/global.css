@@ -1,57 +1,238 @@
-﻿/* ---- Base ---- */
+﻿/* colores y medidas en un solo sitio. si quieres otra paleta
+   (azul, por ejemplo) basta con cambiar los tres --primary */
+:root {
+  --bg: #f2f6f3;
+  --surface: #ffffff;
+  --text: #16221c;
+  --muted: #66756d;
+  --border: #e2e9e4;
 
-/* Con border-box, el padding no agranda las cajas y los anchos se calculan más fácil. */
+  --primary: #2f7d4f;
+  --primary-light: #3a9462;
+  --primary-soft: #e6f3ec;
+  --danger: #c0392b;
+  --danger-soft: #fbeceb;
+  --warning-soft: #fff3d6;
+  --warning-text: #8a5a00;
+
+  --radius: 16px;
+  --radius-sm: 10px;
+  --shadow: 0 1px 2px rgba(22, 34, 28, .05), 0 8px 24px rgba(22, 34, 28, .06);
+  --ring: 0 0 0 3px rgba(47, 125, 79, .25);
+}
+
+/* base */
+
 * { box-sizing: border-box; }
-body { margin: 0; font-family: system-ui, sans-serif; background: #f4f6f8; color: #1d2733; }
 
-/* ---- Login y registro ---- */
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: var(--text);
+  line-height: 1.5;
+  /* un toque de verde arriba para que el fondo no quede tan plano */
+  background: radial-gradient(1100px 420px at 50% -180px, #d8eee1, transparent), var(--bg);
+  background-repeat: no-repeat;
+  background-color: var(--bg);
+}
 
-/* Centra la tarjeta del formulario en la pantalla. */
-.auth-page { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
-.card { width: 100%; max-width: 400px; background: #fff; padding: 28px; border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0,0,0,.08); display: flex; flex-direction: column; gap: 14px; }
-.card h1 { margin: 0 0 4px; font-size: 1.4rem; }
+h1, h2 { line-height: 1.2; }
 
-/* Cada campo: etiqueta arriba, input abajo y el error si lo hay. */
-.field { display: flex; flex-direction: column; gap: 4px; }
-.field label { font-size: .85rem; font-weight: 600; }
-.field input { padding: 10px; border: 1px solid #c5ccd3; border-radius: 8px; font-size: 1rem; }
-/* El borde se pone rojo cuando el campo tiene un error (lo marca aria-invalid). */
-.field input[aria-invalid="true"] { border-color: #c0392b; }
-.field-error, .form-error { margin: 0; color: #c0392b; font-size: .85rem; }
+/* botones */
 
-/* Botón principal. Se ve apagado mientras está procesando. */
-button { padding: 10px 14px; border: 0; border-radius: 8px; background: #2f7d4f; color: #fff;
-  font-size: 1rem; cursor: pointer; }
+button {
+  padding: 11px 16px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, var(--primary-light), var(--primary));
+  color: #fff;
+  font-size: .95rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(47, 125, 79, .25);
+  transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease;
+}
+button:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 14px rgba(47, 125, 79, .3); }
+button:active:not(:disabled) { transform: translateY(0); }
+button:focus-visible { outline: none; box-shadow: var(--ring); }
 button:disabled { opacity: .6; cursor: not-allowed; }
 
-/* Enlace de abajo ("¿Ya tienes cuenta?"). */
-.alt { margin: 0; font-size: .9rem; text-align: center; }
+/* los montos rápidos (100, 250, 500) */
+button.secondary {
+  flex: 1;
+  background: var(--primary-soft);
+  color: var(--primary);
+  box-shadow: none;
+}
+button.secondary:hover:not(:disabled) { background: #d6ecdf; box-shadow: none; }
 
-/* ---- Dashboard ---- */
+/* "usar la tarjeta de prueba" */
+button.link {
+  padding: 0;
+  background: none;
+  color: var(--primary);
+  box-shadow: none;
+  font-size: .85rem;
+  font-weight: 600;
+  text-align: left;
+  text-decoration: underline;
+}
+button.link:hover:not(:disabled) { transform: none; box-shadow: none; }
 
-/* Contenedor de la página, centrado y con un ancho máximo. */
-.dashboard { max-width: 900px; margin: 0 auto; padding: 24px; }
-.dashboard header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+/* formularios */
 
-/* Las tarjetas se acomodan solas: en pantallas angostas pasan a una columna. */
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label { font-size: .82rem; font-weight: 600; color: var(--muted); }
+.field input {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #fbfdfc;
+  color: var(--text);
+  font-size: 1rem;
+  transition: border-color .12s ease, box-shadow .12s ease, background .12s ease;
+}
+.field input::placeholder { color: #a3b0a8; }
+.field input:focus { outline: none; border-color: var(--primary); background: #fff; box-shadow: var(--ring); }
+/* el borde rojo sale cuando el campo trae error (aria-invalid) */
+.field input[aria-invalid="true"] { border-color: var(--danger); }
+.field-error { margin: 0; color: var(--danger); font-size: .82rem; }
+
+/* vencimiento y cvv, uno al lado del otro */
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+.checkbox { display: flex; align-items: center; gap: 8px; font-size: .88rem; color: var(--muted); cursor: pointer; }
+.checkbox input { width: 16px; height: 16px; accent-color: var(--primary); }
+
+/* mensaje de resultado: verde si salió bien, rojo si no */
+.form-ok, .form-error {
+  margin: 4px 0 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  font-size: .88rem;
+  word-break: break-word;
+}
+.form-ok { background: var(--primary-soft); color: #1f6b40; }
+.form-error { background: var(--danger-soft); color: #a8321f; }
+
+/* login y registro */
+
+.auth-page { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
+
+.card {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 32px 28px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+}
+.card h1 { margin: 0 0 6px; font-size: 1.5rem; }
+
+/* el "¿ya tienes cuenta?" de abajo */
+.alt { margin: 0; font-size: .9rem; text-align: center; color: var(--muted); }
+.alt a { color: var(--primary); font-weight: 600; text-decoration: none; }
+.alt a:hover { text-decoration: underline; }
+
+/* dashboard */
+
+.dashboard { max-width: 1040px; margin: 0 auto; padding: 24px 16px 48px; }
+
+.dashboard header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.dashboard header h1 { margin: 0; font-size: 1.25rem; }
+
+/* cerrar sesión va de contorno para que no compita con el botón de cargar saldo */
+.dashboard header button {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  box-shadow: none;
+}
+.dashboard header button:hover:not(:disabled) { background: var(--danger-soft); border-color: #efc4bf; color: var(--danger); box-shadow: none; }
+
+/* las tarjetas se acomodan solas; en pantallas angostas pasan a una columna */
 .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-top: 20px; }
 
-/* Caja base de cada bloque. */
-.panel { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,.08); }
-.panel h2 { margin: 0 0 12px; font-size: 1.05rem; }
+/* el historial ocupa todo el ancho */
+.wide { grid-column: 1 / -1; }
 
-/* Saldo y textos de apoyo. */
-.balance { margin: 0; font-size: 2rem; font-weight: 700; color: #2f7d4f; }
-.hint { margin: 8px 0 0; font-size: .8rem; color: #6b7785; text-align: center; }
+.panel {
+  padding: 22px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.panel h2 { margin: 0 0 14px; font-size: 1rem; }
 
-/* Formulario de recarga. */
-.topup { display: flex; flex-direction: column; gap: 10px; }
-.topup input { padding: 10px; border: 1px solid #c5ccd3; border-radius: 8px; font-size: 1rem; }
+/* la tarjeta del saldo la pinto de verde para que sea lo primero que se vea.
+   uso :has() para no tener que añadir una clase nueva en el componente */
+.panel:has(.balance) {
+  position: relative;
+  overflow: hidden;
+  color: #fff;
+  border: 0;
+  background: linear-gradient(135deg, #3a9462, #1f5c39);
+}
+.panel:has(.balance) h2 { color: rgba(255, 255, 255, .8); font-weight: 600; }
+/* círculo de adorno en la esquina */
+.panel:has(.balance)::after {
+  content: "";
+  position: absolute;
+  right: -40px;
+  bottom: -60px;
+  width: 170px;
+  height: 170px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .1);
+}
+.balance { margin: 0; font-size: 2.4rem; font-weight: 700; letter-spacing: -.02em; color: #fff; }
+
+/* textos chicos de apoyo: centrados debajo de las gráficas, pegados a la izquierda bajo un título */
+.hint { margin: 8px 0 0; font-size: .8rem; color: var(--muted); text-align: center; }
+.panel > h2 + .hint { margin: -8px 0 14px; text-align: left; }
+
+.topup { display: flex; flex-direction: column; gap: 12px; }
 .quick { display: flex; gap: 8px; }
-button.secondary { background: #e7ecf0; color: #1d2733; flex: 1; }
 
-/* Mensajes de la recarga. Van después de .form-error de arriba para
-   sobrescribir su margen y dejar un poco de espacio con el formulario. */
-.form-ok { margin: 10px 0 0; color: #2f7d4f; font-size: .9rem; word-break: break-all; }
-.form-error { margin: 10px 0 0; }
+/* historial de operaciones */
+
+.payments { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.payments li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.payments li:last-child { border-bottom: 0; padding-bottom: 0; }
+.muted { color: var(--muted); font-size: .8rem; }
+
+/* verde aprobada, rojo rechazada, ámbar error del sistema */
+.badge { padding: 3px 10px; border-radius: 999px; font-size: .72rem; font-weight: 700; letter-spacing: .02em; }
+.badge-approved { background: var(--primary-soft); color: #1f6b40; }
+.badge-rejected { background: var(--danger-soft); color: #a8321f; }
+.badge-error { background: var(--warning-soft); color: var(--warning-text); }
+
+/* celulares */
+@media (max-width: 480px) {
+  .card { padding: 24px 18px; }
+  .dashboard header { flex-direction: column; align-items: stretch; text-align: center; }
+  .balance { font-size: 2rem; }
+}
